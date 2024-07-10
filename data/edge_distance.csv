@@ -1,0 +1,92 @@
+﻿Location,Pool_ID,edge_distance_max,edge_distance_min,edge_distance_avg
+delsol_caminocorto,2,398.4,57.2,227.8
+delsol_caminocorto,3,318,37.8,177.9
+delsol_caminocorto,4,293.4,27.4,160.4
+delsol_caminocorto,5,379.4,37,208.2
+delsol_caminocorto,6,426.2,21.8,224
+delsol_caminocorto,7,374.9,20.8,197.85
+delsol_caminocorto,8,320.2,48.4,184.3
+delsol_caminocorto,E,192.4,44.4,118.4
+delsol_caminocorto,F,197.7,32.9,115.3
+delsol_caminocorto,G,214,25.7,119.85
+delsol_caminocorto,H,255,24.7,139.85
+delsol_caminocorto,I,251.6,26.6,139.1
+delsol_caminocorto,J,250.1,33.5,141.8
+delsol_caminocorto,K,241.1,28.6,134.85
+delsol_caminocorto,L,237.9,51.1,144.5
+delsol_caminocorto,M,236.7,35.4,136.05
+delsol_caminocorto,N,249.8,34.5,142.15
+delsol_caminocorto,S,224.8,23.8,124.3
+delsol_caminocorto,T,188,32.6,110.3
+delsol_caminocorto,U,205.5,43.4,124.45
+delsol_caminocorto,V,258,25.5,141.75
+delsol_caminocorto,W,167.4,76.9,122.15
+ellwood_mesa,1,1690.1,19.8,854.95
+ellwood_mesa,2,1444.3,185.6,814.95
+ellwood_mesa,3,1392.7,238.7,815.7
+ellwood_mesa,4,1329.9,276.3,803.1
+ellwood_mesa,5,1230.1,349.2,789.65
+ellwood_mesa,Reference,1231.1,359.2,795.15
+manzanita_village,San Miguel,331.4,26,178.7
+manzanita_village,Santa Barbara,349.6,28.7,189.15
+manzanita_village,Santa Catalina,352,42.5,197.25
+manzanita_village,Santa Cruz,327.7,26.4,177.05
+manzanita_village,Santa Rosa,321,29.6,175.3
+more_mesa,Main pool,1802.3,65.9,934.1
+ncos,1,823.8,180.7,502.25
+ncos,2,874.2,194.4,534.3
+ncos,3,944.1,37,490.55
+ncos,4,954.8,25.2,490
+ncos,5,976.7,19.4,498.05
+ncos,6,1001.2,27.4,514.3
+ncos,7,1023.2,46,534.6
+ncos,8,1039.2,56.4,547.8
+north_parcel,1,31.2,6.96,19.08
+north_parcel,2,14.5,8.1,11.3
+north_parcel,4,60.5,21.8,41.15
+north_parcel,3,55.2,21.6,38.4
+north_parcel,5,43.1,13.2,28.15
+north_parcel,6,74.6,13.2,43.9
+north_parcel,7,48.9,19.8,34.35
+north_parcel,8,81.9,12.6,47.25
+north_parcel,9,18.9,9.82,14.36
+north_parcel,10,35.3,4.41,19.855
+north_parcel,11,11.5,4.41,7.955
+north_parcel,12,155.3,6.61,80.955
+north_parcel,13,144.1,11.8,77.95
+north_parcel,14,119,12.8,65.9
+north_parcel,15,127.4,12,69.7
+north_parcel,16,103.5,17.7,60.6
+north_parcel,17,107.2,7.92,57.56
+north_parcel,18,126.2,10.5,68.35
+north_parcel,19,156,5.74,80.87
+north_parcel,PH1,149.6,13.7,81.65
+sierra_madre,Central Wetland,41.5,32,36.75
+south_parcel,1,449.3,92.7,271
+south_parcel,2,445.5,37.1,241.3
+south_parcel,3,458.6,49.3,253.95
+south_parcel,4,414.6,55.2,234.9
+south_parcel,5,414.8,77,245.9
+south_parcel,6,377.7,57.2,217.45
+south_parcel,7,405.9,25.9,215.9
+south_parcel,8,408.4,39.5,223.95
+south_parcel,9,382.6,57.2,219.9
+south_parcel,SWW 1,625.8,5.57,315.685
+storke_ranch,2007,228,15,121.5
+storke_ranch,2017,200.1,3.11,101.605
+storke_ranch,East,177.8,19.1,98.45
+storke_ranch,Main,216.1,46.5,131.3
+storke_ranch,North,248.6,15.7,132.15
+storke_ranch,South,248.8,12.8,130.8
+west_campus,1,740.1,52.2,396.15
+west_campus,2,719.1,18.7,368.9
+west_campus,3,703.6,70.7,387.15
+west_campus,4,557.4,71.7,314.55
+west_campus,5,536,22.1,279.05
+west_campus,6,475.6,33,254.3
+west_campus,7,471.4,20.3,245.85
+west_campus,8,134.6,28.6,81.6
+west_campus,9,113.5,9.04,61.27
+west_campus,10,154.1,9.86,81.98
+west_campus,11,149,7.94,78.47
+west_campus,13,133.6,33,83.3
