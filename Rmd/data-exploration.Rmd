@@ -13,6 +13,8 @@ library(sf)
 library(terra)
 library(here)
 library(stringr)
+library(lubridate)
+library(janitor)
 ```
 
 # Data Exploration 
@@ -38,21 +40,22 @@ library(stringr)
 # percent_cover_combined_TJ
 # loation, poolID, 
 
-percent_cover<- read_csv(here("data", "percent_cover_combined_JT.csv")) %>% 
+percent_cover <- read_csv(here("data", "percent_cover_combined_JT_date_fixed.csv")) %>% 
   # change column names to snake case
   clean_names() %>% 
   # unselect name identifiers 
   dplyr::select(-monitor_names, -creator, -creation_date,-edit_date,-editor, -creation_date ) %>% 
   # create a new column with location and pool_id
-  mutate(location_pool_id = paste(location, pool_id, sep = "_"))
+  mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
+  mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_')) %>% 
+  # change date using lubridate
+  mutate(monitoring_date = lubridate::mdy(monitoring_date))
 
+# convert decimla dates to dates in lubridate 
 
 #-----------------------------------------------------------
 #              SCRATCH 
 #-----------------------------------------------------------
-
-# columns
-colnames(percent_cover)
 
 # count species types
 percent_cover %>% 
@@ -92,6 +95,7 @@ unique(percent_cover$location_pool_id)
 percent_cover_clean <- percent_cover %>% 
   group_by(location, pool_id) 
 
+str(percent_cover)
 ```
 
 ## HydroData 
@@ -106,7 +110,8 @@ hydro_data <- read_csv(here("data", "hydro_corrected.csv")) %>%
   clean_names() %>% 
   rename(pool_id = vernal_pool_name_or_id) %>% 
   dplyr::select(-creator,-edit_date,-editor, -creation_date) %>% 
-  mutate(location_pool_id = paste(location, pool_id, sep = "_"))
+  mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
+  mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_'))
 
 
 str(hydro_data)
@@ -150,8 +155,9 @@ vp_polygons
 # columns up to K are relavent, measurements from vp_polygons
 pc_abiotic_data <- read_csv(here("data", "pc_abiotic_df.csv")) %>% 
   clean_names() %>% 
-  select(-global_id, -creator, -edit_date, creation_date, -creator, -editor) %>% 
-  mutate(location_pool_id = paste(location, pool_id, sep = "_"))
+  select( -creator, -edit_date, creation_date, -creator, -editor) %>% 
+  mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
+  mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_'))
 
 unique(pc_abiotic_data$location_pool_id)
 ```
@@ -197,7 +203,8 @@ vernal_pools<- st_read(here("data", "VernalPools_Monitored2019", "VernalPools_Mo
   mutate(location = sapply(location, to_snake_case),            # Apply to_snake_case to 'location' column
          location_pool_id = paste(location, pool_id, sep = "_")) %>%  # Create new column combining 'location' and 'pool_id'
   mutate(location_pool_id = sapply(location_pool_id, to_snake_case)) %>% 
-  mutate(location_pool_id = paste(location, pool_id, sep = "_"))
+  mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
+  mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_'))
 
 # 10 unique locations for percent cover 
 # "delsol_caminocorto" "ellwood_mesa"       "manzanita_village"  "more_mesa"          "ncos" 
@@ -252,14 +259,31 @@ length(unique(vernal_pools$location_pool_id))
 
 ```{r}
 
+# CLEANING FOR JOINING
+
+hydro_data_2 <- hydro_data %>% 
+  select(-object_id, -global_id, -x, -y)
+
+#pc_abiotic_data_2 <- pc_abiotic_data
+  
+  
+
+
+
+
+
 # TO DO : combine hydrology and abiotic 
-hydro_abiotic_join <- full_join(hydro_data, pc_abiotic_data, by = "location_pool_id")
+hydro_abiotic_join <- right_join(hydro_data, pc_abiotic_data, by = "global_id")
 
 
 # TO DO : combine abiotic  and shape files ?
 # hydro_vernal_pools_join <- full_join(hydro_data, vernal_pools, by = "location_pool_id")
 
 # notes: clean the date column
+
+colnames(hydro_data)
+
+colnames(pc_abiotic_data)
 
 ```
 
@@ -288,6 +312,16 @@ leaflet(data = vernal_pools) %>%
   addproviderTiles(Stadia.AlidadeSatellite) %>% 
   addPolygons() %>% 
   addPolylines()
+```
+
+#-----------------------------------------------------------
+##       Write Date 
+#-----------------------------------------------------------
+
+```{r, save_date}
+
+
+write_csv()
 ```
 
 
