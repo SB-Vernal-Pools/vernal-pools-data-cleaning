@@ -108,8 +108,8 @@ str(percent_cover)
 
 hydro_data <- read_csv(here("data", "hydro_corrected.csv")) %>% 
   clean_names() %>% 
-  rename(pool_id = vernal_pool_name_or_id) %>% 
-  dplyr::select(-creator,-edit_date,-editor, -creation_date) %>% 
+  rename(pool_id = vernal_pool_name_or_id, hydro_date = date) %>% 
+  dplyr::select(-creator,-edit_date,-editor, -creation_date, -global_id, -monitor_name,-object_id ) %>% 
   mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
   mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_'))
 
@@ -155,9 +155,12 @@ vp_polygons
 # columns up to K are relavent, measurements from vp_polygons
 pc_abiotic_data <- read_csv(here("data", "pc_abiotic_df.csv")) %>% 
   clean_names() %>% 
-  select( -creator, -edit_date, creation_date, -creator, -editor) %>% 
+  # drop anything after depth(keep location throught depth)
+  select(location:depth_cm) %>% 
   mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
   mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_'))
+  # drop anything after depth(keep location throught depth)
+  
 
 unique(pc_abiotic_data$location_pool_id)
 ```
@@ -204,7 +207,8 @@ vernal_pools<- st_read(here("data", "VernalPools_Monitored2019", "VernalPools_Mo
          location_pool_id = paste(location, pool_id, sep = "_")) %>%  # Create new column combining 'location' and 'pool_id'
   mutate(location_pool_id = sapply(location_pool_id, to_snake_case)) %>% 
   mutate(location_pool_id = paste(location, pool_id, sep = "_")) %>% 
-  mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_'))
+  mutate(location_pool_id = str_replace_all(location_pool_id, ' ', '_')) %>% 
+  select(-global_id)
 
 # 10 unique locations for percent cover 
 # "delsol_caminocorto" "ellwood_mesa"       "manzanita_village"  "more_mesa"          "ncos" 
@@ -258,17 +262,18 @@ length(unique(vernal_pools$location_pool_id))
 
 
 ```{r}
+library(tidylog)
 
 # CLEANING FOR JOINING
+View(hydro_data)
+
+View(pc_abiotic_data)
+
 
 hydro_data_2 <- hydro_data %>% 
   select(-object_id, -global_id, -x, -y)
 
 #pc_abiotic_data_2 <- pc_abiotic_data
-  
-  
-
-
 
 
 
@@ -276,8 +281,10 @@ hydro_data_2 <- hydro_data %>%
 hydro_abiotic_join <- right_join(hydro_data, pc_abiotic_data, by = "global_id")
 
 
-# TO DO : combine abiotic  and shape files ?
-# hydro_vernal_pools_join <- full_join(hydro_data, vernal_pools, by = "location_pool_id")
+# TO DO : combine hydrology and shape files
+full_joined_data <- hydro_data %>% 
+  full_join(pc_abiotic_data, by = join_by(location_pool_id)) %>% 
+  full_join(vernal_pools, by = join_by(location_pool_id))
 
 # notes: clean the date column
 
@@ -312,6 +319,9 @@ leaflet(data = vernal_pools) %>%
   addproviderTiles(Stadia.AlidadeSatellite) %>% 
   addPolygons() %>% 
   addPolylines()
+
+
+unique(vernal_pools$gps_date)
 ```
 
 #-----------------------------------------------------------
@@ -321,7 +331,19 @@ leaflet(data = vernal_pools) %>%
 ```{r, save_date}
 
 
-write_csv()
+write_csv(pc_abiotic_data, here("dashboard_data", "pc_abiotic_data.csv"))
+write_csv(hydro_data, here("dashboard_data", "hydro_data.csv"))
+write_csv(percent_cover, here("dashboard_data", "percent_cover_data.csv"))
+# how to save a shp file? 
+#write_csv(vernal_pools, here("dashboard_data", "vernal_pools_monitored"))
+st_write(vernal_pools, here("dashboard_data","vernal_pools_monitored.shp"))
+write_csv(vp_polygons, here("dashboard_data", "vp_polygons_data.csv"))
+
+# new joined dataset
+wrtie_csv(full_joined_data, here("dashboard_data", ""))
+
+
+
 ```
 
 
