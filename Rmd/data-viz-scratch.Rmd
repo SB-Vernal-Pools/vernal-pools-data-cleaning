@@ -1,0 +1,222 @@
+---
+title: "Vernal Pool Data Visualization"
+---
+
+```{r}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(here)
+library(tidyverse)
+library(sf)
+library(janitor)
+# library(tidylog)
+library(tmap)
+library(plotly)
+```
+
+## Data Exploration
+```{r}
+## ===========================================
+##                  Hydrology             ----
+## ===========================================
+# read in data 
+hydro <- read_csv(here("data", "hydro_corrected.csv")) %>% 
+  clean_names()
+
+# explore columns
+colnames(hydro)
+unique(hydro$location)
+
+## ===========================================
+##               Percent Cover            ----
+## ===========================================
+percent_cover <- read_csv(here("data", "percent_cover_combined_JT.csv"))
+
+## ===========================================
+##                  Abiotic               ----
+## ===========================================
+## NOTE: Abiotic df will be used for first level pop-ups, not visualizations
+abiotic <- read_csv(here("data", "pc_abiotic_df.csv"))
+
+
+## ===========================================
+##             Vernal Pool Geoms          ----
+## ===========================================
+# read in data
+pools <- st_read(here("data", "VernalPools_Monitored2019", "VernalPools_Monitored2019.shp")) %>%
+  clean_names()
+
+# check CRS
+#st_crs(pools)
+
+# explore columns
+colnames(pools)
+colSums(is.na(pools))
+
+# plot basic map
+tm_shape(pools) +
+  tm_polygons()
+
+```
+
+
+## Data Cleaning
+```{r}
+## ===========================================
+##                  Hydrology             ----
+## ===========================================
+hydro_clean <- hydro %>% 
+  rename(pool_id = vernal_pool_name_or_id) %>% 
+  
+  # convert date to date-time object
+  mutate(date = mdy_hm(date),
+         date = as.Date(date),
+         
+         # create unique pool_id identifier
+         pool_id = paste0(location, "_", pool_id)) %>%
+  
+  # add numerical month & year columns
+  mutate(month_no = month(date),
+         year = year(date),
+         
+         # use numerical month to determine water year
+         water_year = ifelse(month_no >= 10, year + 1, year)) %>% 
+  
+  # select key columns
+  select(date, pool_id, year, water_year, water_level_in) %>% 
+  
+  # final filter by water year & pool ID here 
+  filter(pool_id == "ncos_1" & water_year == 2019)
+
+## ===========================================
+##       Species Abundance (Pool Level)   ----
+## ===========================================
+species_abdundance <- percent_cover %>% 
+  clean_names() %>% 
+  
+  # create unique pool_id identifier
+  mutate(pool_id = paste0(location, "_", pool_id),
+         
+         # update data types
+         date = mdy(creation_date),
+         type = as.factor(type),
+         
+         # rename type for cleaner labels 
+         type = case_when(type == "nonnative" ~ "Non-Native",
+                          type == "native" ~ "Native",
+                          type == "unknown" ~ "Unknown",
+                          type == "other" ~ "Other")) %>% 
+  
+  # select key columns
+  select(pool_id, transect_axis, percent_cover, type, species, unlisted_species) %>% 
+  
+  # group to pool-level to find species percent cover data
+  group_by(species, pool_id, type) %>% 
+  
+  # calculate total percent cover
+  summarise(percent_cover = sum(percent_cover, na.rm = TRUE)) %>% 
+  
+  # filter by pool
+  filter(pool_id == "west_campus_4" & complete.cases(species) & species != "unlisted")
+
+# remove underscores from species names
+species_abdundance$species <- gsub("_", " ", species_abdundance$species)
+
+## ===========================================
+##       Percent Cover (Quadrat Level)    ----
+## ===========================================
+percent_cover_clean <- percent_cover %>% clean_names() %>%
+  mutate(pool_id = paste0(location, "_", pool_id),
+         date = mdy(creation_date)) %>% 
+  
+  # filter to pool & quadrat
+  filter(pool_id == "west_campus_4" & transect_axis == "major")
+
+```
+
+
+## Data Visualizations
+```{r}
+## ===========================================
+##                Water Level             ----
+## ===========================================
+
+# simple plot of hydrology
+hydro_clean %>% 
+  ggplot(aes(x = date, y = water_level_in)) +
+  geom_line(col = "dodgerblue", linewidth = 1) +
+  # geom_point(col = "dodgerblue") +
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%m-%d") + 
+  labs(x = "Date", 
+       y = "Water Level (in)", 
+       title = "Weekly Water Level",
+       caption = paste0("Water Year: ", unique(hydro_clean$water_year),
+                        "\nPool ID: ", unique(hydro_clean$pool_id))) +
+  theme_classic() +
+  theme(plot.title = element_text(size = 16, hjust = 0.5, vjust = 1.5))
+
+# add interactivity
+#ggplotly(hydro_plot)
+
+## ===========================================
+##            Plant Species Abundance     ----
+## ===========================================
+# species in pool ranked by abundance
+species_abdundance %>% 
+  ggplot(aes(reorder(species, percent_cover), percent_cover, fill = type)) +
+  geom_col() +
+  geom_text(aes(label = percent_cover), size = 3, hjust = -0.2) +
+  scale_fill_manual(values = c("Native" = "#6B8E23",
+                               "Non-Native" = "#D2691E",
+                               "Unknown" = "gray40",
+                               "Other" = "gray50")) +
+  labs(y = "Percent Cover", 
+       x = "Species",
+       title = "Vegetation Abundance by Species",
+       fill = "Type",
+       caption = paste0("Pool ID: ", unique(species_abdundance$pool_id))) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, hjust = 0.5, vjust = 1)) +
+  expand_limits(y = max(species_abdundance$percent_cover) + 4) +
+  coord_flip()
+
+## ===========================================
+##            Plant Species Abundance     ----
+## ===========================================
+# Sum_of_native_cover_automatically_calculated on y axis, transect_distance_of_quadrat on x axis
+ggplot(percent_cover_clean) +
+  geom_point(aes(transect_distance_of_quadrat, sum_of_native_cover_automatically_calculated))
+
+# Count_of_native_species_automatically_calculated on y, transect_distance_of_quadrat on x
+ggplot(percent_cover_clean) +
+  geom_point(aes(transect_distance_of_quadrat, count_of_native_species_automatically_calculated))
+
+# Sum_of_non_native_cover_automatically_calculated on y axis, transect_distance_of_quadrat on x axis
+ggplot(percent_cover_clean) +
+  geom_point(aes(transect_distance_of_quadrat, sum_of_non_native_cover_automatically_calculated))
+
+#Count_of_non_native_species_automatically_calculated on y, transect_distance_of_quadrat on x
+ggplot(percent_cover_clean) +
+  geom_point(aes(transect_distance_of_quadrat, count_of_non_native_species_automatically_calculated))
+
+# percent_thatch on y, transect_distance_of_quadrat on x
+ggplot(percent_cover_clean) +
+  geom_point(aes(transect_distance_of_quadrat, percent_thatch))
+
+# percemt_bare_ground on y, transect_distance_of_quadrat on x
+ggplot(percent_cover_clean) +
+  geom_point(aes(transect_distance_of_quadrat, percent_bare_ground))
+
+# Of each species: percent_cover on y, transect_distance_of_quadrat on x (should be able to toggle by species and by transect axis)
+percent_cover_clean %>% 
+  filter(species == "Malvella_leprosa") %>% 
+  ggplot() +
+  geom_point(aes(transect_distance_of_quadrat, percent_cover))
+```
+
+
+
+
+
