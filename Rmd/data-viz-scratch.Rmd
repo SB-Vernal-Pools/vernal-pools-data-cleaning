@@ -14,6 +14,9 @@ library(janitor)
 # library(tidylog)
 library(tmap)
 library(plotly)
+
+# water year function
+source(here("water-year-fun.R"))
 ```
 
 ## Data Exploration
@@ -22,7 +25,7 @@ library(plotly)
 ##                  Hydrology             ----
 ## ===========================================
 # read in data 
-hydro <- read_csv(here("data", "hydro_corrected.csv")) %>% 
+hydro <- read_csv(here("data", "hydro_corrected_new.csv")) %>% 
   clean_names()
 
 # explore columns
@@ -70,25 +73,22 @@ tm_shape(pools) +
 hydro_clean <- hydro %>% 
   rename(pool_id = vernal_pool_name_or_id) %>% 
   
-  # convert date to date-time object
-  mutate(date = mdy_hm(date),
+  # convert date to date-time object (VS)
+  mutate(date = mdy_hms(date),
          date = as.Date(date),
          
          # create unique pool_id identifier
-         pool_id = paste0(location, "_", pool_id)) %>%
+         location_pool_id = paste0(location, "_", pool_id)) %>%
   
-  # add numerical month & year columns
-  mutate(month_no = month(date),
-         year = year(date),
-         
-         # use numerical month to determine water year
-         water_year = ifelse(month_no >= 10, year + 1, year)) %>% 
+  # calculate water year using custom function (VS)
+  mutate(water_year = water_year(date)) %>% 
+  
   
   # select key columns
-  select(date, pool_id, year, water_year, water_level_in) %>% 
+  select(date, location_pool_id, water_year, water_level_in) %>%
   
-  # final filter by water year & pool ID here 
-  filter(pool_id == "ncos_1" & water_year == 2019)
+  # final filter by water year & pool ID here
+  filter(location_pool_id == "ncos_1" & water_year == 2019)
 
 ## ===========================================
 ##       Species Abundance (Pool Level)   ----
@@ -103,7 +103,7 @@ species_abdundance <- percent_cover %>%
          date = mdy(creation_date),
          type = as.factor(type),
          
-         # rename type for cleaner labels 
+         # rename type for cleaner labels (VS)
          type = case_when(type == "nonnative" ~ "Non-Native",
                           type == "native" ~ "Native",
                           type == "unknown" ~ "Unknown",
@@ -121,7 +121,7 @@ species_abdundance <- percent_cover %>%
   # filter by pool
   filter(pool_id == "west_campus_4" & complete.cases(species) & species != "unlisted")
 
-# remove underscores from species names
+# remove underscores from species names (VS)
 species_abdundance$species <- gsub("_", " ", species_abdundance$species)
 
 ## ===========================================
@@ -132,7 +132,7 @@ percent_cover_clean <- percent_cover %>% clean_names() %>%
          date = mdy(creation_date)) %>% 
   
   # filter to pool & quadrat
-  filter(pool_id == "west_campus_4" & transect_axis == "major")
+  filter(pool_id == "ncos_1" & transect_axis == "minor")
 
 ```
 
@@ -170,6 +170,7 @@ species_abdundance %>%
   geom_text(aes(label = percent_cover), size = 3, hjust = -0.2) +
   scale_fill_manual(values = c("Native" = "#6B8E23",
                                "Non-Native" = "#D2691E",
+                               # drop unknown and other
                                "Unknown" = "gray40",
                                "Other" = "gray50")) +
   labs(y = "Percent Cover", 
@@ -182,6 +183,9 @@ species_abdundance %>%
   expand_limits(y = max(species_abdundance$percent_cover) + 4) +
   coord_flip()
 
+```
+
+```{r}
 ## ===========================================
 ##            Plant Species Abundance     ----
 ## ===========================================
@@ -211,11 +215,10 @@ ggplot(percent_cover_clean) +
 
 # Of each species: percent_cover on y, transect_distance_of_quadrat on x (should be able to toggle by species and by transect axis)
 percent_cover_clean %>% 
-  filter(species == "Malvella_leprosa") %>% 
+  filter(species == "Avena_fatua") %>% 
   ggplot() +
   geom_point(aes(transect_distance_of_quadrat, percent_cover))
 ```
-
 
 
 
