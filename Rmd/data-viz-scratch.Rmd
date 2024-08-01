@@ -15,136 +15,38 @@ library(janitor)
 library(tmap)
 library(plotly)
 
-# water year function
 source(here("water-year-fun.R"))
 ```
 
-## Data Exploration
+## Read in Data
 ```{r}
-## ===========================================
-##                  Hydrology             ----
-## ===========================================
-# read in data 
-hydro <- read_csv(here("data", "hydro_corrected_new.csv")) %>% 
-  clean_names()
+# NOTE: not new hydro data yet
+hydro <- read_csv(here("dashboard_data", "hydro_data.csv")) %>% 
+  mutate(date = mdy_hm(date),
+         date = as.Date(date)) %>% 
+  mutate(water_year = water_year(date))
 
-# explore columns
-colnames(hydro)
-unique(hydro$location)
-
-## ===========================================
-##               Percent Cover            ----
-## ===========================================
-percent_cover <- read_csv(here("data", "percent_cover_combined_JT.csv"))
-
-## ===========================================
-##                  Abiotic               ----
-## ===========================================
-## NOTE: Abiotic df will be used for first level pop-ups, not visualizations
-abiotic <- read_csv(here("data", "pc_abiotic_df.csv"))
-
-
-## ===========================================
-##             Vernal Pool Geoms          ----
-## ===========================================
-# read in data
-pools <- st_read(here("data", "VernalPools_Monitored2019", "VernalPools_Monitored2019.shp")) %>%
-  clean_names()
-
-# check CRS
-#st_crs(pools)
-
-# explore columns
-colnames(pools)
-colSums(is.na(pools))
-
-# plot basic map
-tm_shape(pools) +
-  tm_polygons()
-
-```
-
-
-## Data Cleaning
-```{r}
-## ===========================================
-##                  Hydrology             ----
-## ===========================================
-hydro_clean <- hydro %>% 
-  rename(pool_id = vernal_pool_name_or_id) %>% 
-  
-  # convert date to date-time object (VS)
-  mutate(date = mdy_hms(date),
-         date = as.Date(date),
-         
-         # create unique pool_id identifier
-         location_pool_id = paste0(location, "_", pool_id)) %>%
-  
-  # calculate water year using custom function (VS)
-  mutate(water_year = water_year(date)) %>% 
-  
-  
-  # select key columns
-  select(date, location_pool_id, water_year, water_level_in) %>%
-  
-  # final filter by water year & pool ID here
-  filter(location_pool_id == "ncos_1" & water_year == 2019)
-
-## ===========================================
-##       Species Abundance (Pool Level)   ----
-## ===========================================
-species_abdundance <- percent_cover %>% 
-  clean_names() %>% 
-  
-  # create unique pool_id identifier
-  mutate(pool_id = paste0(location, "_", pool_id),
-         
-         # update data types
-         date = mdy(creation_date),
-         type = as.factor(type),
-         
-         # rename type for cleaner labels (VS)
-         type = case_when(type == "nonnative" ~ "Non-Native",
+# cleaning percent cover labels for images
+percent_cover <- read_csv(here("dashboard_data", "percent_cover_data.csv")) %>% 
+  mutate(type = case_when(type == "nonnative" ~ "Non-Native",
                           type == "native" ~ "Native",
                           type == "unknown" ~ "Unknown",
-                          type == "other" ~ "Other")) %>% 
-  
-  # select key columns
-  select(pool_id, transect_axis, percent_cover, type, species, unlisted_species) %>% 
-  
-  # group to pool-level to find species percent cover data
-  group_by(species, pool_id, type) %>% 
-  
-  # calculate total percent cover
-  summarise(percent_cover = sum(percent_cover, na.rm = TRUE)) %>% 
-  
-  # filter by pool
-  filter(pool_id == "west_campus_4" & complete.cases(species) & species != "unlisted")
+                          type == "other" ~ "Other"))
 
-# remove underscores from species names (VS)
-species_abdundance$species <- gsub("_", " ", species_abdundance$species)
+percent_cover$species <- gsub("_", " ", percent_cover$species)
 
-## ===========================================
-##       Percent Cover (Quadrat Level)    ----
-## ===========================================
-percent_cover_clean <- percent_cover %>% clean_names() %>%
-  mutate(pool_id = paste0(location, "_", pool_id),
-         date = mdy(creation_date)) %>% 
-  
-  # filter to pool & quadrat
-  filter(pool_id == "ncos_1" & transect_axis == "minor")
+## NOTE: Abiotic df will be used for first level pop-ups, not visualizations
+#abiotic <- read_csv(here("dashboard_data", "pc_abiotic_data.csv"))
 
 ```
 
-
-## Data Visualizations
+## Water Level
 ```{r}
-## ===========================================
-##                Water Level             ----
-## ===========================================
-
-# simple plot of hydrology
-hydro_clean %>% 
+hydro %>% 
+  
+  # filters for selectionxa
+  filter(location_pool_id == "ncos_1" & water_year == 2019) %>% 
+  
   ggplot(aes(x = date, y = water_level_in)) +
   geom_line(col = "dodgerblue", linewidth = 1) +
   # geom_point(col = "dodgerblue") +
@@ -152,18 +54,25 @@ hydro_clean %>%
   labs(x = "Date", 
        y = "Water Level (in)", 
        title = "Weekly Water Level",
-       caption = paste0("Water Year: ", unique(hydro_clean$water_year),
-                        "\nPool ID: ", unique(hydro_clean$pool_id))) +
+       caption = paste0("Water Year: ", unique(hydro$water_year),
+                        "\nPool ID: ", unique(hydro$location_pool_id))) +
   theme_classic() +
   theme(plot.title = element_text(size = 16, hjust = 0.5, vjust = 1.5))
 
-# add interactivity
-#ggplotly(hydro_plot)
 
-## ===========================================
-##            Plant Species Abundance     ----
-## ===========================================
-# species in pool ranked by abundance
+```
+
+## Plant Species Abundance
+```{r}
+species_abdundance <- percent_cover %>% 
+  
+  # calculate percent cover sums
+  group_by(species, location_pool_id, type) %>% 
+  summarise(percent_cover = sum(percent_cover, na.rm = TRUE)) %>% 
+  
+  # filter for app
+  filter(location_pool_id == "west_campus_4" & complete.cases(species) & species != "unlisted")
+
 species_abdundance %>% 
   ggplot(aes(reorder(species, percent_cover), percent_cover, fill = type)) +
   geom_col() +
@@ -177,7 +86,7 @@ species_abdundance %>%
        x = "Species",
        title = "Vegetation Abundance by Species",
        fill = "Type",
-       caption = paste0("Pool ID: ", unique(species_abdundance$pool_id))) +
+       caption = paste0("Location-Pool ID: ", unique(species_abdundance$location_pool_id))) +
   theme_minimal() +
   theme(plot.title = element_text(size = 16, hjust = 0.5, vjust = 1)) +
   expand_limits(y = max(species_abdundance$percent_cover) + 4) +
@@ -185,41 +94,102 @@ species_abdundance %>%
 
 ```
 
+
+## Plant Species Cover
 ```{r}
-## ===========================================
-##            Plant Species Abundance     ----
-## ===========================================
+# create subset
+percent_cover_clean <- percent_cover %>% 
+  filter(location_pool_id == "ncos_1" & transect_axis == "minor")
+
 # Sum_of_native_cover_automatically_calculated on y axis, transect_distance_of_quadrat on x axis
-ggplot(percent_cover_clean) +
-  geom_point(aes(transect_distance_of_quadrat, sum_of_native_cover_automatically_calculated))
+ggplot(percent_cover_clean,
+       aes(transect_distance_of_quadrat, sum_of_native_cover_automatically_calculated)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm", 
+              formula = y ~ poly(x, 2)) +
+  theme_minimal() +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Sum of Native Cover",
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
 
 # Count_of_native_species_automatically_calculated on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean) +
-  geom_point(aes(transect_distance_of_quadrat, count_of_native_species_automatically_calculated))
+ggplot(percent_cover_clean,
+       aes(transect_distance_of_quadrat, count_of_native_species_automatically_calculated)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm",
+              formula = y ~ poly(x, 2)) +
+  theme_minimal() +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Count of Native Species",
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
 
 # Sum_of_non_native_cover_automatically_calculated on y axis, transect_distance_of_quadrat on x axis
-ggplot(percent_cover_clean) +
-  geom_point(aes(transect_distance_of_quadrat, sum_of_non_native_cover_automatically_calculated))
+ggplot(percent_cover_clean,
+       aes(transect_distance_of_quadrat, sum_of_non_native_cover_automatically_calculated)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm",
+              formula = y ~ poly(x, 2)) +
+  theme_minimal() +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Sum of Non-Native Cover",
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
 
 #Count_of_non_native_species_automatically_calculated on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean) +
-  geom_point(aes(transect_distance_of_quadrat, count_of_non_native_species_automatically_calculated))
+ggplot(percent_cover_clean,
+       aes(transect_distance_of_quadrat, count_of_non_native_species_automatically_calculated)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm",
+              formula = y ~ poly(x,2)) +
+  theme_minimal() +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Count of Non-Native Species",
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
 
 # percent_thatch on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean) +
-  geom_point(aes(transect_distance_of_quadrat, percent_thatch))
+ggplot(percent_cover_clean,
+       aes(transect_distance_of_quadrat, percent_thatch)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm",
+              formula = y ~ poly(x,2)) +
+  theme_minimal() +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Percent Thatch",
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
 
 # percemt_bare_ground on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean) +
-  geom_point(aes(transect_distance_of_quadrat, percent_bare_ground))
+ggplot(percent_cover_clean,
+       aes(transect_distance_of_quadrat, percent_bare_ground)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm",
+              formula = y ~ poly(x,2)) +
+  theme_minimal() +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Percent Bare Ground",
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
 
 # Of each species: percent_cover on y, transect_distance_of_quadrat on x (should be able to toggle by species and by transect axis)
-percent_cover_clean %>% 
-  filter(species == "Avena_fatua") %>% 
-  ggplot() +
-  geom_point(aes(transect_distance_of_quadrat, percent_cover))
+subset <- percent_cover_clean %>% filter(species == "Eleocharis macrostachya")
+subset$species <- gsub("_", " ", subset$species)
+
+
+subset %>% 
+  ggplot(aes(transect_distance_of_quadrat, percent_cover)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm",
+              formula = y ~ poly(x,2)) +
+  labs(x = "Transect Distance of Quadrat",
+       y = "Percent Cover",
+       title = paste0("Percent Cover, ", unique(subset$species)),
+       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
+                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis))) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
-
-
 
 
