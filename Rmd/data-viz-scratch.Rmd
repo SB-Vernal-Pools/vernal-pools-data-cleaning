@@ -30,12 +30,13 @@ species_abdundance <- percent_cover %>%
   summarise(percent_cover = sum(percent_cover, na.rm = TRUE)) %>% 
   
   # filter for app (RJ)
-  filter(location_pool_id == "west_campus_4" & complete.cases(species) & species != "unlisted")
+  filter(location_pool_id == "West Campus - 4" & complete.cases(species) & species != "unlisted")
 
 # percent cover (quadrat level)
 percent_cover_clean <- percent_cover %>% clean_names() %>%
+  
   # filter for app (RJ)
-  filter(location_pool_id == "ncos_1" & transect_axis == "minor")
+  filter(location_pool_id == "North Campus Open Space - 1" & transect_axis == "minor")
 
 # individual plant cover (quadrat level)
 plant_subset <- percent_cover_clean %>% filter(species == "Eleocharis macrostachya") #filter for app (RJ)
@@ -47,17 +48,14 @@ plant_subset <- percent_cover_clean %>% filter(species == "Eleocharis macrostach
 hydro %>% 
   
   # filters for selection (RJ)
-  filter(location_pool_id == "ncos_1" & water_year == 2019) %>% 
+  filter(location_pool_id == "North Campus Open Space - 1" & water_year == 2019) %>% 
   
   ggplot(aes(x = date, y = water_level_in)) +
   geom_line(col = "dodgerblue", linewidth = 1) +
-  # geom_point(col = "dodgerblue") +
   scale_x_date(date_breaks = "2 weeks", date_labels = "%m-%d") + 
   labs(x = "Date", 
        y = "Water Level (in)", 
-       title = "Weekly Water Level",
-       caption = paste0("Water Year: ", unique(hydro$water_year),
-                        "\nPool ID: ", unique(hydro$location_pool_id))) +
+       title = "Weekly Water Level") +
   theme_classic() +
   theme(plot.title = element_text(size = 16, hjust = 0.5, vjust = 1.5))
 
@@ -67,14 +65,14 @@ hydro %>%
 ## Plant Species Abundance
 ```{r}
 species_abdundance %>% 
+  
+  filter(type %in% c("Native", "Non-Native")) %>% 
+  
   ggplot(aes(reorder(species, percent_cover), percent_cover, fill = type)) +
   geom_col() +
   geom_text(aes(label = percent_cover), size = 3, hjust = -0.2) +
   scale_fill_manual(values = c("Native" = "#6B8E23",
-                               "Non-Native" = "#D2691E",
-                               # drop unknown and other
-                               "Unknown" = "gray40",
-                               "Other" = "gray50")) +
+                               "Non-Native" = "#D2691E")) +
   labs(y = "Percent Cover", 
        x = "Species",
        title = "Vegetation Abundance by Species",

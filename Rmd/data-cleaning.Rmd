@@ -1,0 +1,212 @@
+---
+title: "Vernal Pool Data Cleaning"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(tmap)
+library(sf)
+library(terra)
+library(here)
+library(stringr)
+library(lubridate)
+library(janitor)
+```
+
+
+# Percent Cover 
+
+```{r, percent_cover_combined}
+
+percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed.csv")) %>% 
+  
+  # change column names to snake case
+  clean_names() %>% 
+  
+  # unselect name identifiers 
+  dplyr::select(-c(monitor_names, creator, creation_date, edit_date,
+                   editor, creation_date)) %>% 
+  
+  # customize / clean location names
+  mutate(location = case_when(location == "delsol_caminocorto" ~ "Del Sol/Camino Corto",
+                              location == "ellwood_mesa" ~ "Ellwood Mesa",
+                              location == "manzanita_village" ~ "Manzanita Village",
+                              location == "more_mesa" ~ "More Mesa",
+                              location == "ncos" ~ "North Campus Open Space",
+                              location == "north_parcel" ~ "North Parcel",
+                              location == "sierra_madre" ~ "Sierra Madre",
+                              location == "south_parcel" ~ "South Parcel",
+                              location == "storke_ranch" ~ "Storke Ranch",
+                              location == "west_campus" ~ "West Campus")) %>% 
+  
+  # create combined column
+  mutate(location_pool_id = paste(location, "-", pool_id)) %>% 
+  
+  # change date using lubridate
+  mutate(monitoring_date = lubridate::mdy(monitoring_date)) %>% 
+  
+  # adjust casing/text for "type" column
+  mutate(type = case_when(type == "nonnative" ~ "Non-Native",
+                          type == "native" ~ "Native",
+                          type == "unknown" ~ "Unknown",
+                          type == "other" ~ "Other"))
+```
+
+# Hydro Data
+
+```{r}
+# source function for calculating water year
+source(here("water-year-fun.R"))
+
+hydro_data <- read_csv(here("raw_data", "hydro_corrected_new.csv")) %>% 
+  clean_names() %>% 
+  rename(pool_id = vernal_pool_name_or_id) %>% 
+  mutate(date = mdy_hms(date),
+         date = as.Date(date)) %>%
+  
+  # calculate water year using custom function
+  mutate(water_year = water_year(date)) %>% 
+  
+  # customize / clean location names
+  mutate(location = case_when(location == "delsol_caminocorto" ~ "Del Sol/Camino Corto",
+                              location == "ellwood_mesa" ~ "Ellwood Mesa",
+                              location == "manzanita_village" ~ "Manzanita Village",
+                              location == "more_mesa" ~ "More Mesa",
+                              location == "ncos" ~ "North Campus Open Space",
+                              location == "north_parcel" ~ "North Parcel",
+                              location == "sierra_madre" ~ "Sierra Madre",
+                              location == "south_parcel" ~ "South Parcel",
+                              location == "storke_ranch" ~ "Storke Ranch",
+                              location == "west_campus" ~ "West Campus",
+                              location == "copr" ~ "Coal Oil Point")) %>% 
+  
+  # create combined column
+  mutate(location_pool_id = paste(location, "-", pool_id)) %>% 
+  
+  # select key columns
+  select(date, location_pool_id, water_year, water_level_in)
+
+```
+
+# Vernal Pool Polygons (Static Data)
+
+```{r, meta data}
+vp_polygons <- read_csv(here("raw_data", "vp_polygons.csv")) %>% 
+  clean_names() %>% 
+  
+  # customize / clean location names
+  mutate(location = case_when(location == "delsol_caminocorto" ~ "Del Sol/Camino Corto",
+                              location == "ellwood_mesa" ~ "Ellwood Mesa",
+                              location == "manzanita_village" ~ "Manzanita Village",
+                              location == "more_mesa" ~ "More Mesa",
+                              location == "ncos" ~ "North Campus Open Space",
+                              location == "north_parcel" ~ "North Parcel",
+                              location == "sierra_madre" ~ "Sierra Madre",
+                              location == "south_parcel" ~ "South Parcel",
+                              location == "storke_ranch" ~ "Storke Ranch",
+                              location == "west_campus" ~ "West Campus")) %>% 
+  
+  # create combined column
+  mutate(location_pool_id = paste(location, "-", pool_id))
+
+
+```
+
+
+# PC Abiotic
+
+```{r, pc_abiotic}
+pc_abiotic <- read_csv(here("raw_data", "pc_abiotic_df.csv")) %>% 
+  clean_names() %>% 
+  
+  # customize / clean location names
+  mutate(location = case_when(location == "delsol_caminocorto" ~ "Del Sol/Camino Corto",
+                              location == "ellwood_mesa" ~ "Ellwood Mesa",
+                              location == "manzanita_village" ~ "Manzanita Village",
+                              location == "more_mesa" ~ "More Mesa",
+                              location == "ncos" ~ "North Campus Open Space",
+                              location == "north_parcel" ~ "North Parcel",
+                              location == "sierra_madre" ~ "Sierra Madre",
+                              location == "south_parcel" ~ "South Parcel",
+                              location == "storke_ranch" ~ "Storke Ranch",
+                              location == "west_campus" ~ "West Campus")) %>% 
+  
+  # create combined column
+  mutate(location_pool_id = paste(location, "-", pool_id))
+
+
+```
+
+# Vernal Pools Shapefile (Geoms)
+```{r}
+
+vernal_pools <- st_read(here("raw_data", "VernalPools_Monitored2019", "VernalPools_Monitored2019.shp")) %>% 
+  
+  clean_names() %>%
+  
+  # adjust location names based on acronyms (CHECK)
+  mutate(location = case_when(location == "Del Sol" ~ "Del Sol/Camino Corto",
+                              location == "CC" ~ "Del Sol/Camino Corto",
+                              location == "WCB" ~ "West Campus",
+                              location == "NP" ~ "North Parcel",
+                              location == "Storke" ~ "Storke Ranch",
+                              location == "Sierra Madre Housing" ~ "Sierra Madre",
+                              location == "Ellwood" ~ "Ellwood Mesa",
+                              location == "NCOS" ~ "North Campus Open Space",
+                              TRUE ~ location)) %>% 
+  
+  # adjust pool names based on acronyms (CHECK)
+  mutate(pool_id = case_when(
+    pool_id == "VP 1" ~ "1",
+    pool_id == "VP 2" ~ "2",
+    pool_id == "VP 3" ~ "3",
+    pool_id == "VP 4" ~ "4",
+    pool_id == "VP 5" ~ "5",
+    pool_id == "VP 6" ~ "6",
+    pool_id == "VP 7" ~ "7",
+    pool_id == "VP 8" ~ "8",
+    
+    pool_id == "NWW 1" ~ "1",
+    pool_id == "NWW 2" ~ "2",
+    pool_id == "NWW 3" ~ "3",
+    pool_id == "NWW 4" ~ "4",
+    pool_id == "NWW 5" ~ "5",
+    pool_id == "NWW 6" ~ "6",
+    pool_id == "NWW 7" ~ "7",
+    pool_id == "NWW 8" ~ "8",
+    pool_id == "NWW 9" ~ "9",
+    
+    pool_id == "SWW 1" ~ "1",
+
+    pool_id == "Santa Barbara Vernal Pool" ~ "Santa Barabra",
+    pool_id == "Santa Catalina Vernal Pool" ~ "Santa Catalina",
+    pool_id == "Santa Cruz Vernal Pool" ~ "Santa Cruz",
+    pool_id == "San Miguel Vernal Pool" ~ "San Miguel",
+    pool_id == "Santa Rosa Vernal Pool" ~ "Santa Rosa",
+    TRUE ~ pool_id )) %>% 
+  
+  # transform for maps
+  st_transform(4326) %>% 
+  
+  # create combined column
+  mutate(location_pool_id = paste(location, "-", pool_id))
+
+
+```
+
+
+# Store Data
+
+```{r, save_date}
+
+write_csv(pc_abiotic, here("data", "pc_abiotic_data.csv"))
+write_csv(hydro_data, here("data", "hydro_data.csv"))
+write_csv(percent_cover, here("data", "percent_cover_data.csv"))
+st_write(vernal_pools, here("data","vernal_pools_monitored.shp"))
+write_csv(vp_polygons, here("data", "vp_polygons_data.csv"))
+
+```
+
+
