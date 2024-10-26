@@ -19,27 +19,28 @@ library(plotly)
 ```{r}
 # read in data
 hydro <- read_csv(here("data", "hydro_data.csv")) 
-percent_cover <- read_csv(here("data", "percent_cover_data.csv"))
+#percent_cover <- read_csv(here("data", "percent_cover_data.csv"))
 
-percent_cover$species <- gsub("_", " ", percent_cover$species)
+clean_2024$species <- gsub("_", " ", clean_2024$species)
 
-# =================== plot specific data subsets (RJ) ======================
+# =================== plot specific data subsets ======================
 # plant species abundance plot (pool level)
-species_abdundance <- percent_cover %>% 
+species_abdundance <- clean_2024 %>% 
   group_by(species, location_pool_id, type) %>% 
   summarise(percent_cover = sum(percent_cover, na.rm = TRUE)) %>% 
   
-  # filter for app (RJ)
-  filter(location_pool_id == "West Campus - 4" & complete.cases(species) & species != "unlisted")
+  # filter for app
+  filter(location_pool_id == "West Campus - 1" & complete.cases(species) & species != "unlisted")
 
 # percent cover (quadrat level)
-percent_cover_clean <- percent_cover %>% clean_names() %>%
+transect_level <- clean_2024 %>%
   
   # filter for app (RJ)
-  filter(location_pool_id == "North Campus Open Space - 1" & transect_axis == "minor")
+  filter(location_pool_id == "West Campus - 1" & 
+           vernal_pool_axis == "Major") #NEW COL NAME
 
 # individual plant cover (quadrat level)
-plant_subset <- percent_cover_clean %>% filter(species == "Eleocharis macrostachya") #filter for app (RJ)
+plant_subset <- transect_level %>% filter(species == "Psilocarphus brevissimus") #filter for app
 
 ```
 
@@ -88,86 +89,86 @@ species_abdundance %>%
 
 ## Plant Species Cover
 ```{r}
-## NOTE: Updated geom_smooth() for all plots (RJ)
+## NOTE: Updated geom_smooth() for all plots
 ## ===========================================
 ##            Plant Species Abundance     ----
 ## ===========================================
-# Sum_of_native_cover_automatically_calculated on y axis, transect_distance_of_quadrat on x axis
-ggplot(percent_cover_clean,
-       aes(transect_distance_of_quadrat, sum_of_native_cover_automatically_calculated)) +
+# sum_of_native_cover on y axis, transect_distance_of_quadrat on x axis
+ggplot(transect_level,
+       aes(transect_distance_of_quadrat, sum_of_native_cover)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   theme_minimal() +
   labs(x = "Transect Distance of Quadrat",
        y = "Sum of Native Cover",
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
-# Count_of_native_species_automatically_calculated on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean,
-       aes(transect_distance_of_quadrat, count_of_native_species_automatically_calculated)) +
+# Count_of_native_species on y, transect_distance_of_quadrat on x
+ggplot(transect_level,
+       aes(transect_distance_of_quadrat, count_of_native_species)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   theme_minimal() +
   labs(x = "Transect Distance of Quadrat",
        y = "Count of Native Species",
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
-# Sum_of_non_native_cover_automatically_calculated on y axis, transect_distance_of_quadrat on x axis
-ggplot(percent_cover_clean,
-       aes(transect_distance_of_quadrat, sum_of_non_native_cover_automatically_calculated)) +
+# Sum_of_non_native_cover on y axis, transect_distance_of_quadrat on x axis
+ggplot(transect_level,
+       aes(transect_distance_of_quadrat, sum_of_non_native_cover)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   theme_minimal() +
   labs(x = "Transect Distance of Quadrat",
        y = "Sum of Non-Native Cover",
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
-#Count_of_non_native_species_automatically_calculated on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean,
-       aes(transect_distance_of_quadrat, count_of_non_native_species_automatically_calculated)) +
+#Count_of_non_native_species on y, transect_distance_of_quadrat on x
+ggplot(transect_level,
+       aes(transect_distance_of_quadrat, count_of_non_native_species)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   theme_minimal() +
   labs(x = "Transect Distance of Quadrat",
        y = "Count of Non-Native Species",
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
-# percent_thatch on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean,
-       aes(transect_distance_of_quadrat, percent_thatch)) +
+# percent_natural_thatch on y, transect_distance_of_quadrat on x
+ggplot(transect_level,
+       aes(transect_distance_of_quadrat, percent_natural_thatch)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   theme_minimal() +
   labs(x = "Transect Distance of Quadrat",
        y = "Percent Thatch",
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
 # percemt_bare_ground on y, transect_distance_of_quadrat on x
-ggplot(percent_cover_clean,
+ggplot(transect_level,
        aes(transect_distance_of_quadrat, percent_bare_ground)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   theme_minimal() +
   labs(x = "Transect Distance of Quadrat",
        y = "Percent Bare Ground",
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis)))
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
 # Of each species: percent_cover on y, transect_distance_of_quadrat on x (should be able to toggle by species and by transect axis)
 plant_subset %>% 
   ggplot(aes(transect_distance_of_quadrat, percent_cover)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
+  geom_line(alpha = 0.3, col = "blue") +
   labs(x = "Transect Distance of Quadrat",
        y = "Percent Cover",
        title = paste0("Percent Cover, ", unique(plant_subset$species)),
-       caption = paste0("Location-Pool ID: ", unique(percent_cover_clean$location_pool_id),
-                        "\nQuadrat: ", unique(percent_cover_clean$transect_axis))) +
+       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis))) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 ```

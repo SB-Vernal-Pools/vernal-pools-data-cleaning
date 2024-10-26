@@ -4,15 +4,11 @@ output: html_document
 ---
 
 ```{r}
-library(tidyverse)
-library(leaflet)
-library(tmap)
-library(sf)
-library(terra)
 library(here)
-library(stringr)
-library(lubridate)
 library(janitor)
+library(lubridate)
+library(sf)
+library(tidyverse)
 ```
 
 # Vernal Pools Shapefile (Geoms)
@@ -73,7 +69,7 @@ pool_list <- unique(vernal_pools$location_pool_id)
 ```
 
 
-# Percent Cover 
+# Percent Cover (OLD)
 
 ```{r, percent_cover_combined}
 
@@ -112,11 +108,18 @@ percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed
   mutate(type = case_when(type == "nonnative" ~ "Non-Native",
                           type == "native" ~ "Native"),
          
-         transect_axia= case_when(type == "minor" ~ "Minor",
-                                  type == "major" ~ "Major")) %>%
+         vernal_pool_axis= case_when(transect_axis == "minor" ~ "Minor",
+                                  transect_axis == "major" ~ "Major")) %>% 
   
-  # filter to pools with geoms
-  filter(location_pool_id %in% pool_list)
+  # rename columns to match 2024 data
+  rename(percent_natural_thatch = percent_thatch,
+         count_of_native_species = count_of_native_species_automatically_calculated,
+         sum_of_native_cover = sum_of_native_cover_automatically_calculated, 
+         count_of_non_native_species = count_of_non_native_species_automatically_calculated,
+         sum_of_non_native_cover = sum_of_non_native_cover_automatically_calculated)
+
+# # filter to pools with geoms
+# filter(location_pool_id %in% pool_list)
 
 
 
@@ -588,6 +591,50 @@ percent_cover <- percent_cover %>%
   ))
 
 ```
+
+# Percent Cover (NEW - 2024)
+Clean data and match format to join with old data.
+```{r}
+percent_cover2024 <- read_csv(here("raw_data", "percent_cover_2024.csv")) %>% 
+  janitor::clean_names()
+
+# remove underscores & capitalize locations
+percent_cover2024$project_site <- str_to_title(gsub("_", " ",percent_cover2024$project_site))
+
+clean_2024 <- percent_cover2024 %>% 
+  
+  # fully capitalize NCOS
+  mutate(location = ifelse(project_site == "Ncos", "NCOS", project_site)) %>% 
+  
+  # create location-pool id column
+  rename(pool_id = vernal_pool_name_or_number) %>% 
+  mutate(location_pool_id = paste(location, "-", pool_id)) %>% 
+  
+  # clean dates
+  mutate(monitoring_date = lubridate::mdy(monitoring_date)) %>% 
+  
+  # remove cover types not being visualized & NAs
+  filter(type == "nonnative" | type == "native") %>%
+  filter(!is.na(type) & complete.cases(species)) %>%
+  
+  # adjust casing/text for "type" and "transect axis"
+  mutate(type = case_when(type == "nonnative" ~ "Non-Native",
+                          type == "native" ~ "Native"),
+         
+         transect_axia= case_when(type == "minor" ~ "Minor",
+                                  type == "major" ~ "Major"))
+
+
+# add plant links
+clean_2024 <- clean_2024 %>% 
+  
+  
+
+
+
+```
+
+
 
 # Hydro Data
 
