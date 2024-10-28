@@ -9,6 +9,7 @@ library(janitor)
 library(lubridate)
 library(sf)
 library(tidyverse)
+library(readxl)
 ```
 
 # Vernal Pools Shapefile (Geoms)
@@ -73,6 +74,9 @@ pool_list <- unique(vernal_pools$location_pool_id)
 
 ```{r, percent_cover_combined}
 
+# read in cal flora links
+cal_link <- read_excel(here("raw_data", "calflora_links.xlsx"))
+
 percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed.csv")) %>% 
   
   # change column names to snake case
@@ -116,7 +120,14 @@ percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed
          count_of_native_species = count_of_native_species_automatically_calculated,
          sum_of_native_cover = sum_of_native_cover_automatically_calculated, 
          count_of_non_native_species = count_of_non_native_species_automatically_calculated,
-         sum_of_non_native_cover = sum_of_non_native_cover_automatically_calculated)
+         sum_of_non_native_cover = sum_of_non_native_cover_automatically_calculated) %>% 
+  
+  # update names for "Hordeum_brachyantherum"
+  mutate(species = ifelse(species == "Hordeum_brachyantherum_calif.", "Hordeum_brachyantherum", species)) %>% 
+  mutate(species = ifelse(species == "Hordeum_brachyantherum_brachy.", "Hordeum_brachyantherum", species)) %>% 
+  
+  # add CalFlora links
+  left_join(cal_link, by = "species")
 
 # # filter to pools with geoms
 # filter(location_pool_id %in% pool_list)
@@ -126,470 +137,7 @@ percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed
 # review location_pool_id 
 arrange(plyr::count(percent_cover$location_pool_id), -freq)
 length(unique(percent_cover$location_pool_id))
-
-
-
-# add plant links
-percent_cover <- percent_cover %>% 
-  
-  mutate(spp_cal_flora = case_when(species == "Acmispon_glaber" ~
-                                     "https://www.calflora.org/app/taxon?crn=11280",
-                                   
-                                   species == "Aegilops_cylindrica" ~
-                                     "https://www.calflora.org/app/taxon?crn=105",
-                                   
-                                   species == "Alopecurus_saccatus" ~
-                                     "https://www.calflora.org/app/taxon?crn=263",
-                                   
-                                   species == "Ambrosia_psilostachya" ~
-                                     "https://www.calflora.org/app/taxon?crn=298",
-                                   
-                                   species == "Anemopsis_californica" ~
-                                     "https://www.calflora.org/app/taxon?crn=360",
-                                   
-                                   species == "Artemisia_californica" ~
-                                     "https://www.calflora.org/app/taxon?crn=705",
-                                   
-                                   species == "Arthrocnemum_subterminale" ~
-                                     "https://www.calflora.org/app/taxon?crn=11352",
-                                   
-                                   species == "Asclepias_fascicularis" ~
-                                     "https://www.calflora.org/app/taxon?crn=747",
-                                   
-                                   species == "Atriple_prostrata" ~
-                                     "https://www.calflora.org/app/taxon?crn=11366",
-                                   
-                                   species == "Atriplex_lentiformis" ~
-                                     "https://www.calflora.org/app/taxon?crn=986",
-                                   
-                                   species == "Atriplex_semibaccata" ~
-                                     "https://www.calflora.org/app/taxon?crn=1003",
-                                   
-                                   species == "Avena_barbata" ~
-                                     "https://www.calflora.org/app/taxon?crn=1017",
-                                   
-                                   species == "Avena_fatua" ~
-                                     "https://www.calflora.org/app/taxon?crn=1018",
-                                   
-                                   species == "Baccharis_pilularis" ~
-                                     "https://www.calflora.org/app/taxon?crn=1031",
-                                   
-                                   species == "Baccharis_salicifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=1035",
-                                   
-                                   species == "Bolboschoenus_maritimus" ~
-                                     "https://www.calflora.org/app/taxon?crn=10797",
-                                   
-                                   species == "Brachypodium_distachyon" ~
-                                     "https://www.calflora.org/app/taxon?crn=1137",
-                                   
-                                   species == "Brassica_nigra" ~
-                                     "https://www.calflora.org/app/taxon?crn=1144",
-                                   
-                                   species == "Bromus_carinatus" ~
-                                     "https://www.calflora.org/app/taxon?crn=1195",
-                                   
-                                   species == "Bromus_catharticus" ~
-                                     "https://www.calflora.org/app/taxon?crn=1198",
-                                   
-                                   species == "Bromus_diandrus" ~
-                                     "https://www.calflora.org/app/taxon?crn=1200",
-                                   
-                                   species == "Bromus_hordeaceus" ~
-                                     "https://www.calflora.org/app/taxon?crn=1202",
-                                   
-                                   species == "Bromus_madritensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=1207",
-                                   
-                                   species == "Calandrinia_ciliata" ~
-                                     "https://www.calflora.org/app/taxon?crn=1250",
-                                   
-                                   species == "Callitriche_marginata" ~
-                                     "https://www.calflora.org/app/taxon?crn=1259",
-                                   #
-                                   species == "Camissoniopsis_cheiranthifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=11447",
-                                   
-                                   species == "Carduus_pycnocephalus" ~
-                                     "https://www.calflora.org/app/taxon?crn=1504",
-                                   
-                                   species == "Carex_praegracilis" ~
-                                     "https://www.calflora.org/app/taxon?crn=1616",
-                                   #
-                                   species == "Carpobrotus_chilensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=1659",
-                                   
-                                   species == "Castilleja_densiflora" ~
-                                     "https://www.calflora.org/app/taxon?crn=1690",
-                                   
-                                   species == "Centromadia_parryi_australis" ~
-                                     "https://www.calflora.org/app/taxon?crn=8895",
-                                   
-                                   species == "Convolvulus_arvensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=2321",
-                                   
-                                   species == "Cotula_coronopifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=2404",
-                                   
-                                   species == "Crassula_aquatica" ~
-                                     "https://www.calflora.org/app/taxon?crn=2406",
-                                   
-                                   species == "Croton_setiger" ~
-                                     "https://www.calflora.org/app/taxon?crn=9518",
-                                   
-                                   species == "Crypsis_schoenoides" ~
-                                     "https://www.calflora.org/app/taxon?crn=2439",
-                                   
-                                   species == "Cynodon_dactylon" ~
-                                     "https://www.calflora.org/app/taxon?crn=2570",
-                                   
-                                   species == "Cyperus_eragrostis" ~
-                                     "https://www.calflora.org/app/taxon?crn=2581",
-                                   
-                                   species == "Deinandra_fasciculata" ~
-                                     "https://www.calflora.org/app/taxon?crn=10828",
-                                   
-                                   species == "Deinandra_increscens" ~
-                                     "https://www.calflora.org/app/taxon?crn=9856",
-                                   
-                                   species == "Distichlis_spicata" ~
-                                     "https://www.calflora.org/app/taxon?crn=2743",
-                                   
-                                   species == "Elatine_brachysperma" ~
-                                     "https://www.calflora.org/app/taxon?crn=2899",
-                                   
-                                   species == "Eleocharis_acicularis" ~
-                                     "https://www.calflora.org/app/taxon?crn=2905",
-                                   
-                                   species == "Eleocharis_macrostachya" ~
-                                     "https://www.calflora.org/app/taxon?crn=2911",
-                                   
-                                   species == "Elymus_condensatus" ~
-                                     "https://www.calflora.org/app/taxon?crn=11636",
-                                   
-                                   species == "Elymus_glaucus" ~
-                                     "https://www.calflora.org/app/taxon?crn=2936",
-                                   
-                                   species == "Elymus_triticoides" ~
-                                     "https://www.calflora.org/app/taxon?crn=11648",
-                                   
-                                   species == "Encelia_californica" ~
-                                     "https://www.calflora.org/app/taxon?crn=2963",
-                                   
-                                   species == "Epilobium_brachycarpum" ~
-                                     "https://www.calflora.org/app/taxon?crn=2983",
-                                   
-                                   species == "Epilobium_campestre" ~
-                                     "https://www.calflora.org/app/taxon?crn=11649",
-                                   
-                                   species == "Epilobium_canum" ~
-                                     "https://www.calflora.org/app/taxon?crn=2984",
-                                   
-                                   species == "Epilobium_ciliatum" ~
-                                     "https://www.calflora.org/app/taxon?crn=2988",
-                                   
-                                   species == "Erigeron_bonariensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=11666",
-                                   
-                                   species == "Erigeron_canadensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=11667",
-                                   
-                                   species == "Eriophyllum_confertiflorum" ~
-                                     "https://www.calflora.org/app/taxon?crn=3422",
-                                   
-                                   species == "Erodium_botrys" ~
-                                     "https://www.calflora.org/app/taxon?crn=3446",
-                                   
-                                   species == "Erodium_cicutarium" ~
-                                     "https://www.calflora.org/app/taxon?crn=3448",
-                                   
-                                   species == "Eryngium_armatum" ~
-                                     "https://www.calflora.org/app/taxon?crn=3461",
-                                   
-                                   species == "Eryngium_vaseyi" ~
-                                     "https://www.calflora.org/app/taxon?crn=3469",
-                                   
-                                   species == "Eucalyptus_globulus" ~
-                                     "https://www.calflora.org/app/taxon?crn=3534",
-                                   
-                                   species == "Euphorbia_maculata" ~
-                                     "https://www.calflora.org/app/taxon?crn=13188",
-                                   
-                                   species == "Euthamia_occidentalis" ~
-                                     "https://www.calflora.org/app/taxon?crn=3565",
-                                   
-                                   species == "Extriplex_californica" ~
-                                     "https://www.calflora.org/app/taxon?crn=13174",
-                                   
-                                   species == "Festuca_bromoides" ~
-                                     "https://www.calflora.org/app/taxon?crn=11687",
-                                   
-                                   species == "Festuca_myuros" ~
-                                     "https://www.calflora.org/app/taxon?crn=11689",
-                                   
-                                   species == "Festuca_perennis" ~
-                                     "https://www.calflora.org/app/taxon?crn=11691",
-                                   
-                                   species == "Foeniculum_vulgare" ~
-                                     "https://www.calflora.org/app/taxon?crn=3603",
-                                   
-                                   species == "Frankenia_salina" ~
-                                     "https://www.calflora.org/app/taxon?crn=3612",
-                                   
-                                   species == "Gastridium_phleoides" ~
-                                     "https://www.calflora.org/app/taxon?crn=9978",
-                                   
-                                   species == "Geranium_dissectum" ~
-                                     "https://www.calflora.org/app/taxon?crn=3799",
-                                   
-                                   species == "Gnaphalium_palustre" ~
-                                     "https://www.calflora.org/app/taxon?crn=3946",
-                                   
-                                   species == "Grindelia_camporum" ~
-                                     "https://www.calflora.org/app/taxon?crn=3956",
-                                   
-                                   species == "Helminthotheca_echioides" ~
-                                     "https://www.calflora.org/app/taxon?crn=10921",
-                                   
-                                   species == "Heteromeles_arbutifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=4140",
-                                   
-                                   species == "Heterotheca_grandiflora" ~
-                                     "https://www.calflora.org/app/taxon?crn=4142",
-                                   
-                                   species == "Hordeum_brachyantherum" ~
-                                     "https://www.calflora.org/app/taxon?crn=4218",
-                                   
-                                   species == "Hordeum_marinum" ~
-                                     "https://www.calflora.org/app/taxon?crn=9135",
-                                   
-                                   species == "Hordeum_murinum" ~
-                                     "https://www.calflora.org/app/taxon?crn=4225",
-                                   
-                                   species == "Hypochaeris_glabra" ~
-                                     "https://www.calflora.org/app/taxon?crn=4313",
-                                   
-                                   species == "Isocoma_menziesii" ~
-                                     "https://www.calflora.org/app/taxon?crn=4370",
-                                   
-                                   species == "Juncus_bufonius" ~
-                                     "https://www.calflora.org/app/taxon?crn=4441",
-                                   
-                                   species == "Juncus_mexicanus" ~
-                                     "https://www.calflora.org/app/taxon?crn=4481",
-                                   
-                                   species == "Juncus_occidentalis" ~
-                                     "https://www.calflora.org/app/taxon?crn=4484",
-                                   
-                                   species == "Juncus_patens" ~
-                                     "https://www.calflora.org/app/taxon?crn=4488",
-                                   
-                                   species == "Juncus_phaeocephalus" ~
-                                     "https://www.calflora.org/app/taxon?crn=4489",
-                                   
-                                   species == "Juncus_textilis" ~
-                                     "https://www.calflora.org/app/taxon?crn=4497",
-                                   
-                                   species == "Juncus_xiphoides" ~
-                                     "https://www.calflora.org/app/taxon?crn=4502",
-                                   
-                                   species == "Lactuca_serriola" ~
-                                     "https://www.calflora.org/app/taxon?crn=4550",
-                                   
-                                   species == "Laennecia_coulteri" ~
-                                     "https://www.calflora.org/app/taxon?crn=9509",
-                                   
-                                   species == "Lepidium_didymum" ~
-                                     "https://www.calflora.org/app/taxon?crn=10940",
-                                   
-                                   species == "Lepidium_nitidum" ~
-                                     "https://www.calflora.org/app/taxon?crn=4699",
-                                   
-                                   species == "Logfia_gallica" ~
-                                     "https://www.calflora.org/app/taxon?crn=9521",
-                                   
-                                   species == "Lupinus_succulentus" ~
-                                     "https://www.calflora.org/app/taxon?crn=5217",
-                                   
-                                   species == "Lysimachia_arvensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=13206",
-                                   
-                                   species == "Lysimachia_minima" ~
-                                     "https://www.calflora.org/app/taxon?crn=13209",
-                                   
-                                   species == "Lythrum_hyssopifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=10626",
-                                   
-                                   species == "Malva_parviflora" ~
-                                     "https://www.calflora.org/app/taxon?crn=5354",
-                                   
-                                   species == "Malvella_leprosa" ~
-                                     "https://www.calflora.org/app/taxon?crn=5356",
-                                   
-                                   species == "Medicago_lupulina" ~
-                                     "https://www.calflora.org/app/taxon?crn=5382",
-                                   
-                                   species == "Medicago_polymorpha" ~
-                                     "https://www.calflora.org/app/taxon?crn=5385",
-                                   
-                                   species == "Melica_imperfecta" ~
-                                     "https://www.calflora.org/app/taxon?crn=5399",
-                                   
-                                   species == "Melilotus_albus" ~
-                                     "https://www.calflora.org/app/taxon?crn=10971",
-                                   
-                                   species == "Melilotus_indicus" ~
-                                     "https://www.calflora.org/app/taxon?crn=5406",
-                                   
-                                   species == "Navarretia_squarrosa" ~
-                                     "https://www.calflora.org/app/taxon?crn=5807",
-                                   
-                                   species == "Oxalis_pes-caprae" ~
-                                     "https://www.calflora.org/app/taxon?crn=6016",
-                                   
-                                   species == "Parapholis_incurva" ~
-                                     "https://www.calflora.org/app/taxon?crn=6059",
-                                   
-                                   species == "Phalaris_lemmonii" ~
-                                     "https://www.calflora.org/app/taxon?crn=6422",
-                                   
-                                   species == "Plagiobothrys_bracteatus" ~
-                                     "https://www.calflora.org/app/taxon?crn=6553",
-                                   
-                                   species == "Plagiobothrys_undulatus" ~
-                                     "https://www.calflora.org/app/taxon?crn=6609",
-                                   
-                                   species == "Plantago_coronopus" ~
-                                     "https://www.calflora.org/app/taxon?crn=6612",
-                                   
-                                   species == "Plantago_erecta" ~
-                                     "https://www.calflora.org/app/taxon?crn=6615",
-                                   
-                                   species == "Plantago_lanceolata" ~
-                                     "https://www.calflora.org/app/taxon?crn=6618",
-                                   
-                                   species == "Platanus_racemosa" ~
-                                     "https://www.calflora.org/app/taxon?crn=6633",
-                                   
-                                   species == "Poa_annua" ~
-                                     "https://www.calflora.org/app/taxon?crn=6658",
-                                   
-                                   species == "Polygonum_aviculare_depressum" ~
-                                     "https://www.calflora.org/app/taxon?crn=11034",
-                                   
-                                   species == "Polypogon_interruptus" ~
-                                     "https://www.calflora.org/app/taxon?crn=6782",
-                                   
-                                   species == "Polypogon_monspeliensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=6784",
-                                   
-                                   species == "Polypogon_viridis" ~
-                                     "https://www.calflora.org/app/taxon?crn=11945",
-                                   
-                                   species == "Pseudognaphalium_californicum" ~
-                                     "https://www.calflora.org/app/taxon?crn=11956",
-                                   
-                                   species == "Pseudognaphalium_luteoalbum" ~
-                                     "https://www.calflora.org/app/taxon?crn=11957",
-                                   
-                                   species == "Psilocarphus_brevissimus" ~
-                                     "https://www.calflora.org/app/taxon?crn=6908",
-                                   
-                                   species == "Quercus_agrifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=6983",
-                                   
-                                   species == "Ranunculus_californicus" ~
-                                     "https://www.calflora.org/app/taxon?crn=7032",
-                                   
-                                   species == "Raphanus_sativus" ~
-                                     "https://www.calflora.org/app/taxon?crn=7064",
-                                   
-                                   species == "Rhus_integrifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=7090",
-                                   
-                                   species == "Rumex_acetosella" ~
-                                     "https://www.calflora.org/app/taxon?crn=7213",
-                                   
-                                   species == "Rumex_crispus" ~
-                                     "https://www.calflora.org/app/taxon?crn=7215",
-                                   
-                                   species == "Salix_lasiolepis" ~
-                                     "https://www.calflora.org/app/taxon?crn=7277",
-                                   
-                                   species == "Salsola_tragus" ~
-                                     "https://www.calflora.org/app/taxon?crn=7296",
-                                   
-                                   species == "Salvia_leucophylla" ~
-                                     "https://www.calflora.org/app/taxon?crn=7310",
-                                   
-                                   species == "Schoenoplectus_americanus" ~
-                                     "https://www.calflora.org/app/taxon?crn=9603",
-                                   
-                                   species == "Schoenoplectus_californicus" ~
-                                     "https://www.calflora.org/app/taxon?crn=9604",
-                                   
-                                   species == "Sidalcea_malviflora" ~
-                                     "https://www.calflora.org/app/taxon?crn=7564",
-                                   
-                                   species == "Sisyrinchium_bellum" ~
-                                     "https://www.calflora.org/app/taxon?crn=7632",
-                                   
-                                   species == "Solanum_douglasii" ~
-                                     "https://www.calflora.org/app/taxon?crn=7652",
-                                   
-                                   species == "Sonchus_asper" ~
-                                     "https://www.calflora.org/app/taxon?crn=10384",
-                                   
-                                   species == "Sonchus_oleraceus" ~
-                                     "https://www.calflora.org/app/taxon?crn=7682",
-                                   
-                                   species == "Spergula_arvensis" ~
-                                     "https://www.calflora.org/app/taxon?crn=9630",
-                                   
-                                   species == "Spergularia_villosa" ~
-                                     "https://www.calflora.org/app/taxon?crn=7717",
-                                   
-                                   species == "Stachys_ajugoides" ~
-                                     "https://www.calflora.org/app/taxon?crn=7751",
-                                   
-                                   species == "Stebbinsoseris_heterocarpa" ~
-                                     "https://www.calflora.org/app/taxon?crn=7768",
-                                   
-                                   species == "Stipa_miliacea" ~
-                                     "https://www.calflora.org/app/taxon?crn=12151",
-                                   
-                                   species == "Stipa_pulchra" ~
-                                     "https://www.calflora.org/app/taxon?crn=12067",
-                                   
-                                   species == "Symphyotrichum_chilense" ~
-                                     "https://www.calflora.org/app/taxon?crn=10402",
-                                   
-                                   species == "Symphyotrichum_subulatum" ~
-                                     "https://www.calflora.org/app/taxon?crn=11095",
-                                   
-                                   species == "Tragopogon_porrifolius" ~
-                                     "https://www.calflora.org/app/taxon?crn=8020",
-                                   
-                                   species == "Trifolium_hirtum" ~
-                                     "https://www.calflora.org/app/taxon?crn=8081",
-                                   
-                                   species == "Typha_latifolia" ~
-                                     "https://www.calflora.org/app/taxon?crn=8178",
-                                   
-                                   species == "Veronica_peregrina" ~
-                                     "https://www.calflora.org/app/taxon?crn=9269",
-                                   
-                                   species == "Vicia_sativa" ~
-                                     "https://www.calflora.org/app/taxon?crn=8446",
-                                   
-                                   species == "Vicia_villosa" ~
-                                     "https://www.calflora.org/app/taxon?crn=8447",
-                                   
-                                   species == "Zeltnera_muehlenbergii" ~
-                                     "https://www.calflora.org/app/taxon?crn=11124"
-                                   
-  ))
-
+                                
 ```
 
 # Percent Cover (NEW - 2024)
@@ -623,16 +171,24 @@ clean_2024 <- percent_cover2024 %>%
          
          transect_axia= case_when(type == "minor" ~ "Minor",
                                   type == "major" ~ "Major"))
-
-
-# add plant links
-clean_2024 <- clean_2024 %>% 
   
   
 
 
 
 ```
+
+
+
+```{r}
+            
+# have 47, not alternates (alter 49 and 48 to match 47 for reproducability)
+#[47] "Hordeum_brachyantherum"        
+#[48] "Hordeum_brachyantherum_brachy."
+#[49] "Hordeum_brachyantherum_calif." 
+
+```
+
 
 
 
