@@ -170,26 +170,12 @@ clean_2024 <- percent_cover2024 %>%
                           type == "native" ~ "Native"),
          
          transect_axia= case_when(type == "minor" ~ "Minor",
-                                  type == "major" ~ "Major"))
+                                  type == "major" ~ "Major")) %>% 
   
-  
-
-
+  # add calflora links
+  left_join(cal_link, by = "species")
 
 ```
-
-
-
-```{r}
-            
-# have 47, not alternates (alter 49 and 48 to match 47 for reproducability)
-#[47] "Hordeum_brachyantherum"        
-#[48] "Hordeum_brachyantherum_brachy."
-#[49] "Hordeum_brachyantherum_calif." 
-
-```
-
-
 
 
 # Hydro Data
@@ -302,6 +288,7 @@ length(unique(pc_abiotic$location_pool_id))
 write_csv(pc_abiotic, here("data", "pc_abiotic_data.csv"))
 write_csv(hydro_data, here("data", "hydro_data.csv"))
 write_csv(percent_cover, here("data", "percent_cover_data.csv"))
+write_csv(percent_cover2024, here("data", "percent_cover_2024.csv"))
 st_write(vernal_pools, here("data","vernal_pools_monitored.shp"), append = FALSE)
 write_csv(vp_polygons, here("data", "vp_polygons_data.csv"))
 
