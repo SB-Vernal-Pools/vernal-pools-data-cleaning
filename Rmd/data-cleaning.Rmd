@@ -113,7 +113,7 @@ percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed
                           type == "native" ~ "Native"),
          
          vernal_pool_axis= case_when(transect_axis == "minor" ~ "Minor",
-                                  transect_axis == "major" ~ "Major")) %>% 
+                                     transect_axis == "major" ~ "Major")) %>% 
   
   # rename columns to match 2024 data
   rename(percent_natural_thatch = percent_thatch,
@@ -137,7 +137,7 @@ percent_cover <- read_csv(here("raw_data", "percent_cover_combined_JT_date_fixed
 # review location_pool_id 
 arrange(plyr::count(percent_cover$location_pool_id), -freq)
 length(unique(percent_cover$location_pool_id))
-                                
+
 ```
 
 # Percent Cover (NEW - 2024)
@@ -174,6 +174,25 @@ clean_2024 <- percent_cover2024 %>%
   
   # add calflora links
   left_join(cal_link, by = "species")
+
+## TEST: Joining old & new data
+# pc_cover <- percent_cover %>% 
+#   select(monitoring_date, transect_distance_of_quadrat, 
+#          percent_bare_ground, percent_natural_thatch,
+#          count_of_native_species, sum_of_native_cover, 
+#          type, species, percent_cover, location_pool_id, 
+#          vernal_pool_axis, spp_cal_flora)
+# 
+# pc_cover2024 <- clean_2024 %>% 
+#   select(monitoring_date, transect_distance_of_quadrat, 
+#          percent_bare_ground, percent_natural_thatch,
+#          count_of_native_species, sum_of_native_cover, 
+#          type, species, percent_cover, location_pool_id, 
+#          vernal_pool_axis, spp_cal_flora)
+# 
+# colnames(pc_cover2024) == colnames(pc_cover)
+# 
+# test <- rbind(pc_cover, pc_cover2024)
 
 ```
 
@@ -288,7 +307,7 @@ length(unique(pc_abiotic$location_pool_id))
 write_csv(pc_abiotic, here("data", "pc_abiotic_data.csv"))
 write_csv(hydro_data, here("data", "hydro_data.csv"))
 write_csv(percent_cover, here("data", "percent_cover_data.csv"))
-write_csv(percent_cover2024, here("data", "percent_cover_2024.csv"))
+write_csv(clean_2024, here("data", "percent_cover_2024.csv"))
 st_write(vernal_pools, here("data","vernal_pools_monitored.shp"), append = FALSE)
 write_csv(vp_polygons, here("data", "vp_polygons_data.csv"))
 
