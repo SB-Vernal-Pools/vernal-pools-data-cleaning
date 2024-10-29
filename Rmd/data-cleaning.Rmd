@@ -169,8 +169,8 @@ clean_2024 <- percent_cover2024 %>%
   mutate(type = case_when(type == "nonnative" ~ "Non-Native",
                           type == "native" ~ "Native"),
          
-         transect_axia= case_when(type == "minor" ~ "Minor",
-                                  type == "major" ~ "Major")) %>% 
+         vernal_pool_axis = case_when(vernal_pool_axis == "minor" ~ "Minor",
+                                      vernal_pool_axis == "major" ~ "Major")) %>% 
   
   # add calflora links
   left_join(cal_link, by = "species")
