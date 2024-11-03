@@ -33,14 +33,14 @@ species_abdundance <- clean_2024 %>%
   filter(location_pool_id == "West Campus - 1" & complete.cases(species) & species != "unlisted")
 
 # percent cover (quadrat level)
-transect_level <- clean_2024 %>%
+transect_level <- temp %>%
   
   # filter for app (RJ)
-  filter(location_pool_id == "West Campus - 1" & 
-           vernal_pool_axis == "Major") #NEW COL NAME
+  filter(location_pool_id == "Del Sol/Camino Corto - 3" & 
+           vernal_pool_axis == "Major")
 
 # individual plant cover (quadrat level)
-plant_subset <- transect_level %>% filter(species == "Psilocarphus brevissimus") #filter for app
+plant_subset <- transect_level %>% filter(species == "Avena_fatua")
 
 ```
 
@@ -160,15 +160,15 @@ ggplot(transect_level,
                         "\nQuadrat: ", unique(transect_level$vernal_pool_axis)))
 
 # Of each species: percent_cover on y, transect_distance_of_quadrat on x (should be able to toggle by species and by transect axis)
-plant_subset %>% 
+test %>% 
   ggplot(aes(transect_distance_of_quadrat, percent_cover)) +
   geom_point() +
   geom_line(alpha = 0.3, col = "blue") +
-  labs(x = "Transect Distance of Quadrat",
-       y = "Percent Cover",
-       title = paste0("Percent Cover, ", unique(plant_subset$species)),
-       caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
-                        "\nQuadrat: ", unique(transect_level$vernal_pool_axis))) +
+  # labs(x = "Transect Distance of Quadrat",
+  #      y = "Percent Cover",
+  #      title = paste0("Percent Cover, ", unique(plant_subset$species)),
+  #      caption = paste0("Location-Pool ID: ", unique(transect_level$location_pool_id),
+  #                       "\nQuadrat: ", unique(transect_level$vernal_pool_axis))) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 ```

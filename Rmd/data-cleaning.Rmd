@@ -140,6 +140,37 @@ length(unique(percent_cover$location_pool_id))
 
 ```
 
+# ADDING 0's
+
+```{r, eval=FALSE}
+
+temp <- percent_cover %>% filter(location_pool_id == "Del Sol/Camino Corto - 3" & 
+                                   vernal_pool_axis == "Major" &
+                                   species == "Avena_fatua")
+
+fill_gaps <- function(df) {
+  # Create sequence of all distances
+  all_distances <- min(df$transect_distance_of_quadrat):max(df$transect_distance_of_quadrat)
+  
+  # Create new dataframe with all distances
+  result <- data.frame(
+    transect_distance_of_quadrat = all_distances,
+    percent_cover = 0
+  )
+  
+  # Fill in actual values where they exist
+  result$percent_cover[result$transect_distance_of_quadrat %in% df$transect_distance_of_quadrat] <- 
+    df$percent_cover
+  
+  return(result)
+}
+
+test <- fill_gaps(temp)
+
+
+```
+
+
 # Percent Cover (NEW - 2024)
 Clean data and match format to join with old data.
 ```{r}

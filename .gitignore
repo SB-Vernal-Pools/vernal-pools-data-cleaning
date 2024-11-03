@@ -49,6 +49,4 @@ po/*~
 rsconnect/
 
 .DS_Store
-*/.DS_Store
-*/raw_data/
-/raw_data/
+/raw_data
